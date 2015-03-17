@@ -1,6 +1,6 @@
 {
   "name": "typed-table",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "The module of TypedTable Object for JavaScript",
   "main": "lib/typed-table.js",
   "scripts": {
@@ -22,6 +22,7 @@
   "author": "YusukeHirao",
   "license": "MIT",
   "dependencies": {
+    "jaco": "^1.2.0",
     "xlsx": "^0.7.12"
   },
   "devDependencies": {

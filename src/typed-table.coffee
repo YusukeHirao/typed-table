@@ -1,5 +1,14 @@
+'use strict'
+
 fs = require 'fs'
+path = require 'path'
 xlsx = require 'xlsx'
+jaco = require 'jaco'
+
+Jaco = jaco.Jaco
+
+PARENT = module.parent
+BASE_DIR = path.dirname PARENT.filename
 
 CHAR_CODE_A = 64
 CHAR_CODE_Z = 90
@@ -55,10 +64,9 @@ class Range
 	endNCol: 0
 	endNRow: 0
 
-	constructor: (ref) ->
+	constructor: (@ref) ->
 
-
-		refSplit =/^([a-z]+)([0-9]+):([a-z]+)([0-9]+)/ig.exec ref
+		refSplit =/^([a-z]+)([0-9]+):([a-z]+)([0-9]+)/ig.exec @ref
 
 		@startCol = refSplit[1]
 		@startRow = refSplit[2]
@@ -84,16 +92,14 @@ class Cell
 
 	constructor: (@value, @type, @format, @color = 0x000000, @bgColor = -1) ->
 
-
-
 class Sheet
 
 	range: null
-	cells: null
+	rows: null
 
 	constructor: (sheetData) ->
 
-		@cells = []
+		@rows = []
 
 		@range = new Range sheetData['!ref']
 
@@ -103,63 +109,71 @@ class Sheet
 		while r <= rl
 			c = @range.startNCol
 			cl = @range.endNCol
-			col = []
+			cols = []
 			while c <= cl
 				id = "#{_getColFormNumber c}#{r}"
-				# col[c - 1] = sheetData[id]
 				cellData = sheetData[id]
 				if cellData
-
 					cellValue = new Cell cellData.v, cellData.t, cellData.f
 					if cellData.s
 						cellValue.bgColor = parseInt cellData.s.fgColor.rgb, 16
-
 				else
-
 					cellValue = null
-
-				col[c - 1] = cellValue
+				cols[c - 1] = cellValue
 				c++
-			@cells[r - 1] = col
+			@rows[r - 1] = cols
 			r++
 
 class TypedTable
 
-	@cells = null
-	@header = null
-	@types = null
+	rows: null
+	header: null
+	types: null
 
-	constructor: (cells, rowOption) ->
+	constructor: (rows, rowOption) ->
 
 		rowOption = rowOption || {}
 
 		LABEL_ROW_NUM = rowOption.label || 0 # ignore row
 		HEADER_ROW_NUM = rowOption.header || 1 # field name
 		TYPE_ROW_NUM = rowOption.type || 2 # field type
+		DESC_ROW_NUM = rowOption.description || null # ignore row
 
-		@cells = []
+		# console.log
+		# 	LABEL_ROW_NUM: LABEL_ROW_NUM
+		# 	HEADER_ROW_NUM: HEADER_ROW_NUM
+		# 	TYPE_ROW_NUM: TYPE_ROW_NUM
+		# 	DESC_ROW_NUM: DESC_ROW_NUM
 
-		for cell, i in cells
+		@rows = []
+		@header = []
+		@types = []
 
-			switch i
-				when LABEL_ROW_NUM
+		for cols, rowNum in rows
+
+			switch rowNum
+				when LABEL_ROW_NUM, DESC_ROW_NUM
 					continue
 				when HEADER_ROW_NUM
-					@header = cell
+					@header = cols.slice(0)
 				when TYPE_ROW_NUM
-					@types = cell
+					@types = cols.slice(0)
 				else
-					@cells.push cell
+					@rows.push cols.slice(0)
+			cols = null
+		rows = null
 
 	toJSON: () ->
 
 		data = []
 
-		for row, i in @cells
+		allNull = true
+
+		for row, i in @rows
 			cellValues = {}
 			for cell, j in row
 				headerName = @header[j].value
-				type = @types[j].value
+				type = @types[j].value if @types and @types[j]
 				if headerName
 
 					# ヘッダからキー名を取得する
@@ -197,11 +211,18 @@ class TypedTable
 						cellValues[parentName][childName] = value
 					else
 						cellValues[keyName] = value
-			data.push cellValues
+
+					if value isnt null and allNull is true
+						allNull = false
+
+			if not allNull
+				data.push cellValues
+
+			allNull = true
 
 		data
 
-	toJSONStringify: (replacer, space) ->
+	toJSONStringify: (replacer, space = '	') ->
 
 		JSON.stringify @toJSON(), replacer, space
 
@@ -213,12 +234,19 @@ class TypedTable
 
 	@readExcel = (xlsxFile, rowOption) ->
 
-		file = xlsx.readFile xlsxFile,
+		file = xlsx.readFile path.resolve(path.join(BASE_DIR, xlsxFile)),
 			cellStyles: on
 			cellNF: on
 
-		sheets = for name in file.SheetNames
-			new Sheet file.Sheets[name]
+		sheets = []
+		tables = []
 
-		new Table(sheets[0].cells, rowOption)
+		for name in file.SheetNames
+			sheet = new Sheet file.Sheets[name]
+			table = new TypedTable(sheet.rows, rowOption)
+			sheets.push sheet
+			tables.push table
 
+		tables
+
+module.exports = TypedTable
