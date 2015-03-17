@@ -234,7 +234,13 @@ class TypedTable
 
 	@readExcel = (xlsxFile, rowOption) ->
 
-		file = xlsx.readFile path.resolve(path.join(BASE_DIR, xlsxFile)),
+		if path.isAbsolute xlsxFile
+			filePath = xlsxFile
+		else
+			calledDir = path.dirname module.parent.filename
+			filePath = path.join calledDir, xlsxFile
+
+		file = xlsx.readFile filePath,
 			cellStyles: on
 			cellNF: on
 
