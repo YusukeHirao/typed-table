@@ -134,10 +134,10 @@ class TypedTable
 
 		rowOption = rowOption || {}
 
-		LABEL_ROW_NUM = rowOption.label || 0 # ignore row
-		HEADER_ROW_NUM = rowOption.header || 1 # field name
-		TYPE_ROW_NUM = rowOption.type || 2 # field type
-		DESC_ROW_NUM = rowOption.description || null # ignore row
+		LABEL_ROW_NUM = if rowOption.label isnt undefined then rowOption.label else 0 # ignore row
+		HEADER_ROW_NUM = if rowOption.header isnt undefined then rowOption.header else 1 # field name
+		TYPE_ROW_NUM = if rowOption.type isnt undefined then rowOption.type else 2 # field type
+		DESC_ROW_NUM = if rowOption.description isnt undefined then rowOption.description else null # ignore row
 
 		# console.log
 		# 	LABEL_ROW_NUM: LABEL_ROW_NUM

@@ -4,6 +4,7 @@
   "description": "The module of TypedTable Object for JavaScript",
   "main": "lib/typed-table.js",
   "scripts": {
+    "start": "coffee -o lib/ -cb src/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
