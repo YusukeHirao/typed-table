@@ -27,7 +27,6 @@ _getNumberOfCol = (r1c1) ->
 		num = num * 26 + n
 	num
 
-
 # 整数値の列番号をアルファベット形式に変換
 _getColFormNumber = (num) ->
 	s = ''
@@ -237,8 +236,7 @@ class TypedTable
 		if path.isAbsolute xlsxFile
 			filePath = xlsxFile
 		else
-			calledDir = path.dirname module.parent.filename
-			filePath = path.join calledDir, xlsxFile
+			filePath = path.join process.cwd(), xlsxFile
 
 		file = xlsx.readFile filePath,
 			cellStyles: on
