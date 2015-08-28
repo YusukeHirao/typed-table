@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "ES5",
+        "outDir": "./",
+        "module": "commonjs",
+        "sourceMap": true,
+        "declaration": true
+    },
+    "files": [
+        "typings/bundle.d.ts",
+        "typings/others.d.ts",
+        "src/TypedTable.ts"
+    ]
+}
