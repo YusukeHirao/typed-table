@@ -3,14 +3,14 @@ import path = require('path');
 import inflection = require('inflection');
 import xlsx = require('xlsx');
 
-export function readExcel (xlsxFilePath: string, rowOption: IRowOption): Table[] {
-	var tables: Table[] = [];
+export function readExcel (xlsxFilePath: string, rowOption: IRowOption): TableCollection {
+	var tables: TableCollection = new TableCollection;
 	
 	var filePath: string;
 	if (path.isAbsolute(xlsxFilePath)) {
 		filePath = xlsxFilePath;
 	} else {
-		filePath = path.normalize(path.join(path.dirname(process.argv[1]), xlsxFilePath));
+		filePath = path.normalize(path.join(process.cwd(), path.dirname(process.argv[process.argv.length - 1]), xlsxFilePath));
 	}
 	
 	var xlsxFile: xlsx.XLSX = xlsx.readFile(filePath, {
@@ -24,57 +24,120 @@ export function readExcel (xlsxFilePath: string, rowOption: IRowOption): Table[]
 	
 	for (let i: number = 0, l: number = xlsxFile.SheetNames.length; i < l; i++) {
 		let name: string = xlsxFile.SheetNames[i];
-		let sheet: Sheet = new Sheet(xlsxFile.Sheets[name]);
-		let table: Table = new Table(sheet.rows, rowOption);
-		tables.push(table);
+		let table: Table = new Table(xlsxFile.Sheets[name], rowOption);
+		tables.add(name, table);
 	}
 	
 	return tables;
 }
 
+export class TableCollection {
+	
+	private _items: Table[] = [];
+	private _names: string[] = [];
+
+	constructor () {
+	}
+	
+	public add (name: string, table: Table): void {
+		this._items.push(table);
+		this._names.push(name);
+	}
+	
+	public item (index: string | number): Table {
+		var refIndex: number;
+		if (typeof index === 'string') {
+			let name: string = index;
+			refIndex = this._names.indexOf(name);
+		} else {
+			refIndex = index;
+		}
+		return this._items[refIndex] || null;
+	}
+	
+	public each (callback: (table: Table, name: string, index: number) => void): void {
+		for (let i: number = 0, l: number = this._items.length; i < l; i++) {
+			let table: Table = this._items[i];
+			let name: string = this._names[i];
+			callback.call(this, table, name, i);
+		}
+	}
+
+	public toJSON (): any {
+		var result: any = {};
+		this.each( (table: Table, name: string, index: number): void => {
+			result[name] = table.toJSON();
+		});
+		return result;
+	}
+	
+	public toJSONStringify (replacer: any[] = null, space: string = '\t'): string {
+		return JSON.stringify(this.toJSON(), replacer, space);
+	}
+	
+	public saveJSON (fileName: string, space: string = '\t'): void {
+		var filePath: string = path.normalize(path.join(process.cwd(), path.dirname(process.argv[process.argv.length - 1]), fileName));
+		fs.writeFileSync(filePath, this.toJSONStringify());
+	}
+
+}
+
 export class Table {
 
-	static CHAR_CODE_A = 64;
-	static CHAR_CODE_Z = 90;
-
+	private _range: Range;
 	private _rows: Cell[][] = [];
 	private _header: Cell[] = [];
 	private _types: Cell[] = [];
 
-	constructor (rows: any[][], rowOption: IRowOption = {}) {
-		
-		var _rows: Cell[][] = <Cell[][]> rows;
+	constructor (sheetData: xlsx.XLSXSheet, rowOption: IRowOption = {}) {
 		
 		var rowNumLabel: number = rowOption.label !== undefined ? rowOption.label : 0;
 		var rowNumHeader: number = rowOption.header !== undefined ? rowOption.header : 1;
 		var rowNumType: number = rowOption.type !== undefined ? rowOption.type : 2;
 		var rowNumDescription: number = rowOption.description !== undefined ? rowOption.description : null;
+
+		this._range = new Range(sheetData['!ref']);
+
+		let r: number = this._range.startNRow;
+		let rl: number = this._range.endNRow;
 		
-		var i: number = 0;
-		var l: number = _rows.length;
-		for (; i < l; i++) {
-			let cols: Cell[] = _rows[i];
-			switch (i) {
+		while (r <= rl) {
+			let c: number = this._range.startNCol;
+			let cl: number = this._range.endNCol;
+			let cols: Cell[] = [];
+			let rowNum: number = r - 1;
+			while (c <= cl) {
+				let id: string = `${_getColFormNumber(c)}${r}`;
+				let cellData: xlsx.XLSXCell = <xlsx.XLSXCell> sheetData[id];
+				let cell: Cell;
+				if (cellData) {
+					cell = new Cell(cellData, id);
+				} else {
+					cell = null;
+				}
+				cols[c] = cell;
+				c++;
+			}
+			switch (rowNum) {
 				case rowNumLabel:
 				case rowNumDescription: {
 					continue;
 				}
 				case rowNumHeader: {
-					this._header = cols.slice(0);
+					this._header = cols;
 					break;
 				}
 				case rowNumType: {
-					this._types = cols.slice(0);
+					this._types = cols;
 					break;
 				}
 				default: {
-					this._rows.push(cols.slice(0));
+					this._rows[rowNum] = cols;
 				}
 			}
-			cols = null;
+			r++;
 		}
-		_rows = null;
-		
+
 	}
 	
 	public toJSON (): any[] {
@@ -87,13 +150,13 @@ export class Table {
 			for (let i: number = 0, l: number = row.length; i < l; i++) {
 				let cell: Cell = row[i];
 				let headerName: string;
-				let type: string = 'stub';
+				let type: string;
 				let value: string | number | boolean | Date | string[];
 				if (this._header[i]) {
 					headerName = this._header[i].value;
 				}
 				if (this._types[i]) {
-					type = `${this._types[i].value}`.toLowerCase() || 'stub';
+					type = `${this._types[i].value}`.toLowerCase();
 				}
 				if (!headerName) {
 					continue;
@@ -129,7 +192,7 @@ export class Table {
 		return data;
 	}
 	
-	public toJSONStringify (replacer?: any[], space: string = '\t'): string {
+	public toJSONStringify (replacer: any[] = null, space: string = '\t'): string {
 		return JSON.stringify(this.toJSON(), replacer, space);
 	}
 
@@ -158,12 +221,12 @@ class Sheet {
 			let c: number = this.range.startNCol;
 			let cl: number = this.range.endNCol;
 			let cols: Cell[] = [];
-			while (c < cl) {
+			while (c <= cl) {
 				let id: string = `${_getColFormNumber(c)}${r}`;
 				let cellData: xlsx.XLSXCell = <xlsx.XLSXCell> sheetData[id];
 				let cell: Cell;
 				if (cellData) {
-					cell = new Cell(cellData);
+					cell = new Cell(cellData, id);
 				} else {
 					cell = null;
 				}
@@ -180,41 +243,55 @@ class Sheet {
 
 class Cell {
 
-	static typing (xlsxCell: xlsx.XLSXCell): string {
-		return 'string';
-	}
-
-	private _raw: any = null;
-	public value: any = null;
-	public type: string = '';
-	public numberFormat: string = '';
+	private _raw: any;
+	private _val: any;
+	public value: any;
+	public type: string;
+	public numberFormat: string;
 	public color: number = 0x000000;
 	public bgColor: number = -1;
+	public id: string;
 
-	constructor (xlsxCell: xlsx.XLSXCell) {
+	constructor (xlsxCell: xlsx.XLSXCell, id: string) {
 		
 		this._raw = xlsxCell.v;
+		this._val = xlsxCell.w;
 		this.type = xlsxCell.t;
 		this.numberFormat = xlsxCell.z;
 		
-		this.value = this.convertFromType(this.type);
+		this.value = this.convertFromType();
+
+		this.id = id;
 
 	}
 	
-	public convertFromType (type: string): any {
+	public convertFromType (type?: string): any {
 
 		var value: any;
+		var origin: any;
+
+		if (type === undefined || type === '') {
+			type = this.type || 'stub';
+		}
+
+		if (this.numberFormat === 'General') {
+			origin = this._raw;
+		} else {
+			origin = this._val;
+			if (this.type === 'n') {
+				type = 's';
+			}
+		}
 
 		switch (type) {
-			case 'stub': {
-				value = '';
-				break;
-			}
 			case 'c':
 			case 'color':
 			case 'colour': {
-				if (/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(this._raw)) {
-					value = _colorCodeToNumber(this._raw);
+				let numericValue = parseFloat(origin);
+				if (!isNaN(numericValue)) {
+					value = numericValue > 0 ? numericValue >= 0xFFFFFF ? 0xFFFFFF : Math.floor(numericValue) : 0;
+				} else if (/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(origin)) {
+					value = _colorCodeToNumber(origin);
 				} else {
 					value = this.bgColor;
 				}
@@ -224,17 +301,17 @@ class Cell {
 			case 'date':
 			case 't':
 			case 'time': {
-				value = new Date(((+this._raw - 25569) * 86400 * 1000) || 0);
+				value = new Date(((+origin - 25569) * 86400 * 1000) || 0);
 				break;
 			}
 			case 'a':
 			case 'arr':
 			case 'ary':
 			case 'array': {
-				if (this._raw === undefined) {
+				if (origin === undefined) {
 					return [];
 				}
-				let values: string[] = `${this._raw}`.split(',');
+				let values: string[] = `${origin}`.split(',');
 				value = values.map<string>( (item: string, i: number): string => {
 					return item.trim();
 				});
@@ -243,35 +320,48 @@ class Cell {
 			case 'b':
 			case 'bool':
 			case 'boolean': {
-				value = !!this._raw;
+				value = !!origin;
 				break;
 			}
 			case 'i':
 			case 'int': {
-				value = isNaN(this._raw) ? 0 : parseInt(this._raw, 10);
+				let numeric: number = +origin;
+				let interger: number = Math.floor(numeric);
+				value = interger || 0;
 				break;
 			}
 			case 'u':
 			case 'uint': {
-				value = this._raw > 0 ? parseInt(this._raw, 10) : 0;
+				let numeric: number = +origin;
+				let interger: number = Math.floor(numeric);
+				value = interger > 0 ? interger : 0;
 				break;
 			}
 			case 'f':
 			case 'float':
 			case 'n':
+			case 'num':
 			case 'number': {
-				value = parseFloat(this._raw);
+				value = +origin;
 				break;
 			}
 			case 's':
 			case 'str':
 			case 'string': {
-				value = this._raw !== undefined ? `${this._raw}` : '';
+				value = origin !== undefined ? `${origin}` : '';
+				break;
+			}
+			case 'e': {
+				console.warn('Error cell');
+				value = null;
+				break;
+			}
+			case 'stub': {
+				value = '';
 				break;
 			}
 			default: {
-				// TODO: 型推論
-				value = this._raw;
+				value = origin;
 			}
 		}
 		
@@ -316,11 +406,9 @@ class Range {
 	public endNCol: number = 0;
 	public endNRow: number = 0;
 
-	public ref;
+	constructor (ref = 'A0:A0') {
 
-	constructor (ref) {
-
-		var refSplit: RegExpExecArray =/^([a-z]+)([0-9]+):([a-z]+)([0-9]+)/ig.exec(ref);
+		var refSplit: RegExpExecArray = /^([a-z]+)([0-9]+):([a-z]+)([0-9]+)/ig.exec(ref);
 
 		this.startCol = refSplit[1];
 		this.startRow = refSplit[2];
@@ -363,7 +451,10 @@ function _getNumberOfCol (r1c1: string): number {
  * #RRGGBB形式のカラーコードを数値に変換する
  */
 function _colorCodeToNumber(code: string): number {
-	return parseInt(code.replace(/#/, ''), 16);
+	if (code.length === 4) {
+		code = code.replace(/^#(.)(.)(.)$/ig, '#$1$1$2$2$3$3');
+	}
+	return parseInt(code.replace('#', ''), 16);
 }
 
 /**

@@ -1,11 +1,22 @@
-export declare function readExcel(xlsxFilePath: string, rowOption: IRowOption): Table[];
+import xlsx = require('xlsx');
+export declare function readExcel(xlsxFilePath: string, rowOption: IRowOption): TableCollection;
+export declare class TableCollection {
+    private _items;
+    private _names;
+    constructor();
+    add(name: string, table: Table): void;
+    item(index: string | number): Table;
+    each(callback: (table: Table, name: string, index: number) => void): void;
+    toJSON(): any;
+    toJSONStringify(replacer?: any[], space?: string): string;
+    saveJSON(fileName: string, space?: string): void;
+}
 export declare class Table {
-    static CHAR_CODE_A: number;
-    static CHAR_CODE_Z: number;
+    private _range;
     private _rows;
     private _header;
     private _types;
-    constructor(rows: any[][], rowOption?: IRowOption);
+    constructor(sheetData: xlsx.XLSXSheet, rowOption?: IRowOption);
     toJSON(): any[];
     toJSONStringify(replacer?: any[], space?: string): string;
 }
