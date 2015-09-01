@@ -2,6 +2,7 @@
 
 // import
 var chai = require('chai');
+chai.use(require('chai-datetime'));
 var tt = require('../lib/src/TypedTable');
 var assert = chai.assert;
 
@@ -43,7 +44,7 @@ describe('JSONテスト', function () {
 });
 
 describe('型テスト', function () {
-
+	
 	var xlsx = tt.readExcel('origin/xlsx002.xlsx');
 	var json = xlsx.toJSON();
 	
@@ -56,10 +57,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, -1, '色型 c');
 		assert.strictEqual(row.color, -1, '色型 color');
 		assert.strictEqual(row.colour, -1, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), 0, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), 0, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), 0, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), 0, '日付型 time');
+		assert.equalTime(row.d, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 time');
 		assert.ok(isNaN(row.n), '数値型 n');
 		assert.ok(isNaN(row.num), '数値型 num');
 		assert.ok(isNaN(row.number), '数値型 number');
@@ -87,10 +88,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, 0, '色型 c');
 		assert.strictEqual(row.color, 0, '色型 color');
 		assert.strictEqual(row.colour, 0, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), -2209161600000, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), -2209161600000, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), -2209161600000, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), -2209161600000, '日付型 time');
+		assert.equalTime(row.d, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 time');
 		assert.strictEqual(row.n, 0, '数値型 n');
 		assert.strictEqual(row.num, 0, '数値型 num');
 		assert.strictEqual(row.number, 0, '数値型 number');
@@ -118,10 +119,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, 1, '色型 c');
 		assert.strictEqual(row.color, 1, '色型 color');
 		assert.strictEqual(row.colour, 1, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), -2209075200000, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), -2209075200000, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), -2209075200000, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), -2209075200000, '日付型 time');
+		assert.equalTime(row.d, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 time');
 		assert.strictEqual(row.n, 1, '数値型 n');
 		assert.strictEqual(row.num, 1, '数値型 num');
 		assert.strictEqual(row.number, 1, '数値型 number');
@@ -149,10 +150,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, 3, '色型 c');
 		assert.strictEqual(row.color, 3, '色型 color');
 		assert.strictEqual(row.colour, 3, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), -2208890166451, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), -2208890166451, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), -2208890166451, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), -2208890166451, '日付型 time');
+		assert.equalTime(row.d, new Date(1900, 0, 3, 3, 23, 53, 549), '日付型 d');
+		assert.equalTime(row.date, new Date(1900, 0, 3, 3, 23, 53, 549), '日付型 date');
+		assert.equalTime(row.t, new Date(1900, 0, 3, 3, 23, 53, 549), '日付型 t');
+		assert.equalTime(row.time, new Date(1900, 0, 3, 3, 23, 53, 549), '日付型 time');
 		assert.strictEqual(row.n, 3.141592, '数値型 n');
 		assert.strictEqual(row.num, 3.141592, '数値型 num');
 		assert.strictEqual(row.number, 3.141592, '数値型 number');
@@ -180,10 +181,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, 0, '色型 c');
 		assert.strictEqual(row.color, 0, '色型 color');
 		assert.strictEqual(row.colour, 0, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), -2381961600000, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), -2381961600000, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), -2381961600000, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), -2381961600000, '日付型 time');
+		assert.equalTime(row.d, new Date(1894, 6, 10, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1894, 6, 10, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1894, 6, 10, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1894, 6, 10, 0, 0, 0, 0), '日付型 time');
 		assert.strictEqual(row.n, -2000, '数値型 n');
 		assert.strictEqual(row.num, -2000, '数値型 num');
 		assert.strictEqual(row.number, -2000, '数値型 number');
@@ -211,10 +212,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, -1, '色型 c');
 		assert.strictEqual(row.color, -1, '色型 color');
 		assert.strictEqual(row.colour, -1, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), 0, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), 0, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), 0, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), 0, '日付型 time');
+		assert.equalTime(row.d, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 time');
 		assert.ok(isNaN(row.n), '数値型 n');
 		assert.ok(isNaN(row.num), '数値型 num');
 		assert.ok(isNaN(row.number), '数値型 number');
@@ -242,10 +243,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, -1, '色型 c');
 		assert.strictEqual(row.color, -1, '色型 color');
 		assert.strictEqual(row.colour, -1, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), 0, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), 0, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), 0, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), 0, '日付型 time');
+		assert.equalTime(row.d, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 time');
 		assert.ok(isNaN(row.n), '数値型 n');
 		assert.ok(isNaN(row.num), '数値型 num');
 		assert.ok(isNaN(row.number), '数値型 number');
@@ -273,10 +274,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, -1, '色型 c');
 		assert.strictEqual(row.color, -1, '色型 color');
 		assert.strictEqual(row.colour, -1, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), 0, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), 0, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), 0, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), 0, '日付型 time');
+		assert.equalTime(row.d, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 time');
 		assert.ok(isNaN(row.n), '数値型 n');
 		assert.ok(isNaN(row.num), '数値型 num');
 		assert.ok(isNaN(row.number), '数値型 number');
@@ -298,16 +299,16 @@ describe('型テスト', function () {
 	it('true', function () {
 		var row = json.suite[8];
 		assert.strictEqual(row.empty, true, '型未定義');
-		assert.strictEqual(row.s, 'true', '文字列型 s');
-		assert.strictEqual(row.str, 'true', '文字列型 str');
-		assert.strictEqual(row.string, 'true', '文字列型 string');
+		assert.strictEqual(row.s, 'TRUE', '文字列型 s');
+		assert.strictEqual(row.str, 'TRUE', '文字列型 str');
+		assert.strictEqual(row.string, 'TRUE', '文字列型 string');
 		assert.strictEqual(row.c, -1, '色型 c');
 		assert.strictEqual(row.color, -1, '色型 color');
 		assert.strictEqual(row.colour, -1, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), -2209075200000, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), -2209075200000, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), -2209075200000, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), -2209075200000, '日付型 time');
+		assert.equalTime(row.d, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 time');
 		assert.strictEqual(row.n, 1, '数値型 n');
 		assert.strictEqual(row.num, 1, '数値型 num');
 		assert.strictEqual(row.number, 1, '数値型 number');
@@ -320,25 +321,25 @@ describe('型テスト', function () {
 		assert.strictEqual(row.b, true, '論理値型 b');
 		assert.strictEqual(row.bool, true, '論理値型 bool');
 		assert.strictEqual(row.boolean, true, '論理値型 boolean');
-		assert.deepEqual(row.a, ['true'], '配列型 a');
-		assert.deepEqual(row.arr, ['true'], '配列型 arr');
-		assert.deepEqual(row.ary, ['true'], '配列型 ary');
-		assert.deepEqual(row.array, ['true'], '配列型 array');
+		assert.deepEqual(row.a, ['TRUE'], '配列型 a');
+		assert.deepEqual(row.arr, ['TRUE'], '配列型 arr');
+		assert.deepEqual(row.ary, ['TRUE'], '配列型 ary');
+		assert.deepEqual(row.array, ['TRUE'], '配列型 array');
 	});
 
 	it('false', function () {
 		var row = json.suite[9];
 		assert.strictEqual(row.empty, false, '型未定義');
-		assert.strictEqual(row.s, 'false', '文字列型 s');
-		assert.strictEqual(row.str, 'false', '文字列型 str');
-		assert.strictEqual(row.string, 'false', '文字列型 string');
+		assert.strictEqual(row.s, 'FALSE', '文字列型 s');
+		assert.strictEqual(row.str, 'FALSE', '文字列型 str');
+		assert.strictEqual(row.string, 'FALSE', '文字列型 string');
 		assert.strictEqual(row.c, -1, '色型 c');
 		assert.strictEqual(row.color, -1, '色型 color');
 		assert.strictEqual(row.colour, -1, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), -2209161600000, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), -2209161600000, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), -2209161600000, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), -2209161600000, '日付型 time');
+		assert.equalTime(row.d, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 time');
 		assert.strictEqual(row.n, 0, '数値型 n');
 		assert.strictEqual(row.num, 0, '数値型 num');
 		assert.strictEqual(row.number, 0, '数値型 number');
@@ -351,10 +352,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.b, false, '論理値型 b');
 		assert.strictEqual(row.bool, false, '論理値型 bool');
 		assert.strictEqual(row.boolean, false, '論理値型 boolean');
-		assert.deepEqual(row.a, ['false'], '配列型 a');
-		assert.deepEqual(row.arr, ['false'], '配列型 arr');
-		assert.deepEqual(row.ary, ['false'], '配列型 ary');
-		assert.deepEqual(row.array, ['false'], '配列型 array');
+		assert.deepEqual(row.a, ['FALSE'], '配列型 a');
+		assert.deepEqual(row.arr, ['FALSE'], '配列型 arr');
+		assert.deepEqual(row.ary, ['FALSE'], '配列型 ary');
+		assert.deepEqual(row.array, ['FALSE'], '配列型 array');
 	});
 
 	it('#f00', function () {
@@ -366,10 +367,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, 0xFF0000, '色型 c');
 		assert.strictEqual(row.color, 0xFF0000, '色型 color');
 		assert.strictEqual(row.colour, 0xFF0000, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), 0, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), 0, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), 0, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), 0, '日付型 time');
+		assert.equalTime(row.d, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 time');
 		assert.ok(isNaN(row.n), '数値型 n');
 		assert.ok(isNaN(row.num), '数値型 num');
 		assert.ok(isNaN(row.number), '数値型 number');
@@ -397,10 +398,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, 0xFF0000, '色型 c');
 		assert.strictEqual(row.color, 0xFF0000, '色型 color');
 		assert.strictEqual(row.colour, 0xFF0000, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), 0, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), 0, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), 0, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), 0, '日付型 time');
+		assert.equalTime(row.d, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 time');
 		assert.ok(isNaN(row.n), '数値型 n');
 		assert.ok(isNaN(row.num), '数値型 num');
 		assert.ok(isNaN(row.number), '数値型 number');
@@ -431,10 +432,10 @@ describe('型テスト', function () {
 		assert.strictEqual(row.c, -1, '色型 c');
 		assert.strictEqual(row.color, -1, '色型 color');
 		assert.strictEqual(row.colour, -1, '色型 colour');
-		assert.strictEqual(row.d.valueOf(), 0, '日付型 d');
-		assert.strictEqual(row.date.valueOf(), 0, '日付型 date');
-		assert.strictEqual(row.t.valueOf(), 0, '日付型 t');
-		assert.strictEqual(row.time.valueOf(), 0, '日付型 time');
+		assert.equalTime(row.d, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1899, 11, 31, 0, 0, 0, 0), '日付型 time');
 		assert.ok(isNaN(row.n), '数値型 n');
 		assert.ok(isNaN(row.num), '数値型 num');
 		assert.ok(isNaN(row.number), '数値型 number');
@@ -459,22 +460,22 @@ describe('型テスト', function () {
 		assert.strictEqual(row.s, '1900/1/1 0:00', '文字列型 s');
 		assert.strictEqual(row.str, '1900/1/1 0:00', '文字列型 str');
 		assert.strictEqual(row.string, '1900/1/1 0:00', '文字列型 string');
-		assert.strictEqual(row.c, 0, '色型 c');
-		assert.strictEqual(row.color, 0, '色型 color');
-		assert.strictEqual(row.colour, 0, '色型 colour');
-		assert.equal(row.d, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 d');
-		assert.equal(row.date, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 date');
-		assert.equal(row.t, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 t');
-		assert.equal(row.time, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 time');
-		assert.ok(isNaN(row.n), '数値型 n');
-		assert.ok(isNaN(row.num), '数値型 num');
-		assert.ok(isNaN(row.number), '数値型 number');
-		assert.strictEqual(row.i, 0, '整数型 i');
-		assert.strictEqual(row.int, 0, '整数型 int');
-		assert.strictEqual(row.u, 0, '符号なし整数型 u');
-		assert.strictEqual(row.uint, 0, '符号なし整数型 uint');
-		assert.ok(isNaN(row.f), '浮動小数点数型 f');
-		assert.ok(isNaN(row.float), '浮動小数点数型 float');
+		assert.strictEqual(row.c, 1, '色型 c');
+		assert.strictEqual(row.color, 1, '色型 color');
+		assert.strictEqual(row.colour, 1, '色型 colour');
+		assert.equalTime(row.d, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 d');
+		assert.equalTime(row.date, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 date');
+		assert.equalTime(row.t, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 t');
+		assert.equalTime(row.time, new Date(1900, 0, 1, 0, 0, 0, 0), '日付型 time');
+		assert.strictEqual(row.n, 1, '数値型 n');
+		assert.strictEqual(row.num, 1, '数値型 num');
+		assert.strictEqual(row.number, 1, '数値型 number');
+		assert.strictEqual(row.i, 1, '整数型 i');
+		assert.strictEqual(row.int, 1, '整数型 int');
+		assert.strictEqual(row.u, 1, '符号なし整数型 u');
+		assert.strictEqual(row.uint, 1, '符号なし整数型 uint');
+		assert.strictEqual(row.f, 1, '浮動小数点数型 f');
+		assert.strictEqual(row.float, 1, '浮動小数点数型 float');
 		assert.strictEqual(row.b, true, '論理値型 b');
 		assert.strictEqual(row.bool, true, '論理値型 bool');
 		assert.strictEqual(row.boolean, true, '論理値型 boolean');

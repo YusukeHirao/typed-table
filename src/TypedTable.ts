@@ -85,12 +85,13 @@ export class TableCollection {
 export class Table {
 
 	private _range: Range;
-	private _rows: Cell[][] = [];
-	private _header: Cell[] = [];
-	private _types: Cell[] = [];
+	private _rows: ValueCell[][] = [];
+	private _header: MetaCell[] = [];
+	private _types: TypeCell[] = [];
 
 	constructor (sheetData: xlsx.XLSXSheet, rowOption: IRowOption = {}) {
 		
+		// TODO: メタ情報は値より若い行になければならないことを保証する
 		var rowNumLabel: number = rowOption.label !== undefined ? rowOption.label : 0;
 		var rowNumHeader: number = rowOption.header !== undefined ? rowOption.header : 1;
 		var rowNumType: number = rowOption.type !== undefined ? rowOption.type : 2;
@@ -106,12 +107,47 @@ export class Table {
 			let cl: number = this._range.endNCol;
 			let cols: Cell[] = [];
 			let rowNum: number = r - 1;
+			let cellRole: CellRole;
+			switch (rowNum) {
+				case rowNumLabel: {
+					cellRole = CellRole.LABEL;
+					break;
+				}
+				case rowNumHeader: {
+					cellRole = CellRole.HEADER;
+					break;
+				}
+				case rowNumType: {
+					cellRole = CellRole.TYPE;
+					break;
+				}
+				case rowNumDescription: {
+					cellRole = CellRole.DESCRIPTION;
+					break;
+				}
+				default: {
+					cellRole = CellRole.VALUE;
+				}
+			}
 			while (c <= cl) {
 				let id: string = `${_getColFormNumber(c)}${r}`;
 				let cellData: xlsx.XLSXCell = <xlsx.XLSXCell> sheetData[id];
 				let cell: Cell;
 				if (cellData) {
-					cell = new Cell(cellData, id);
+					switch (cellRole) {
+						case CellRole.VALUE: {
+							let type: CellType = this._types[c].type;
+							cell = new ValueCell(cellData, id, type);
+							break;
+						}
+						case CellRole.TYPE: {
+							cell = new TypeCell(cellData, id);
+							break;
+						}
+						default: {
+							cell = new MetaCell(cellData, id);
+						}
+					}
 				} else {
 					cell = null;
 				}
@@ -121,18 +157,18 @@ export class Table {
 			switch (rowNum) {
 				case rowNumLabel:
 				case rowNumDescription: {
-					continue;
+					break;
 				}
 				case rowNumHeader: {
-					this._header = cols;
+					this._header = <MetaCell[]> cols;
 					break;
 				}
 				case rowNumType: {
-					this._types = cols;
+					this._types = <TypeCell[]> cols;
 					break;
 				}
 				default: {
-					this._rows[rowNum] = cols;
+					this._rows.push(<ValueCell[]> cols);
 				}
 			}
 			r++;
@@ -145,24 +181,20 @@ export class Table {
 		var allNullFlag: boolean = true;
 		
 		for (let i: number = 0, l: number = this._rows.length; i < l; i++) {
-			let row = this._rows[i];
-			let cellValues = {};
+			let row: ValueCell[] = this._rows[i];
+			let cellValues: any = {};
 			for (let i: number = 0, l: number = row.length; i < l; i++) {
-				let cell: Cell = row[i];
+				let cell: ValueCell = row[i];
 				let headerName: string;
-				let type: string;
 				let value: string | number | boolean | Date | string[];
 				if (this._header[i]) {
 					headerName = this._header[i].value;
-				}
-				if (this._types[i]) {
-					type = `${this._types[i].value}`.toLowerCase();
 				}
 				if (!headerName) {
 					continue;
 				}
 				if (cell) {
-					value = cell.convertFromType(type);
+					value = cell.value;
 				} else {
 					value = null;
 				}
@@ -198,95 +230,172 @@ export class Table {
 
 }
 
+enum CellRole {
+	VALUE,
+	LABEL,
+	HEADER,
+	TYPE,
+	DESCRIPTION
+}
+
+enum CellType {
+	STRING,
+	NUMBER,
+	BOOLEAN,
+	DATE,
+	COLOR,
+	INTEGER,
+	UNSIGNED_INTEGER,
+	ARRAY,
+	ERROR,
+	UNKNOWN,
+}
+
 export interface IRowOption {
 	label?: number;
 	header?: number;
 	type?: number;
 	description?: number;
 }
-	
-class Sheet {
-	
-	public range: Range;
-	public rows: Cell[][] = [];
-	
-	constructor (sheetData: xlsx.XLSXSheet) {
-		
-		this.range = new Range(sheetData['!ref']);
-
-		let r: number = this.range.startNRow;
-		let rl: number = this.range.endNRow;
-		
-		while (r <= rl) {
-			let c: number = this.range.startNCol;
-			let cl: number = this.range.endNCol;
-			let cols: Cell[] = [];
-			while (c <= cl) {
-				let id: string = `${_getColFormNumber(c)}${r}`;
-				let cellData: xlsx.XLSXCell = <xlsx.XLSXCell> sheetData[id];
-				let cell: Cell;
-				if (cellData) {
-					cell = new Cell(cellData, id);
-				} else {
-					cell = null;
-				}
-				cols[c] = cell;
-				c++;
-			}
-			this.rows[r - 1] = cols;
-			r++;
-		}
-		
-	}
-	
-}
 
 class Cell {
-
-	private _raw: any;
-	private _val: any;
-	public value: any;
-	public type: string;
-	public numberFormat: string;
-	public color: number = 0x000000;
-	public bgColor: number = -1;
+	protected _raw: any;
+	protected _val: any;
 	public id: string;
-
+	
 	constructor (xlsxCell: xlsx.XLSXCell, id: string) {
-		
 		this._raw = xlsxCell.v;
 		this._val = xlsxCell.w;
-		this.type = xlsxCell.t;
-		this.numberFormat = xlsxCell.z;
-		
-		this.value = this.convertFromType();
-
 		this.id = id;
-
 	}
-	
-	public convertFromType (type?: string): any {
+}
 
-		var value: any;
-		var origin: any;
+class MetaCell extends Cell {
+	public value: string;
+	constructor (xlsxCell: xlsx.XLSXCell, id: string) {
+		super(xlsxCell, id);
+		this.value = `${this._val}`.trim();
+	}
+}
 
-		if (type === undefined || type === '') {
-			type = this.type || 'stub';
-		}
+class TypeCell extends MetaCell {
+	public type: CellType;
 
-		if (this.numberFormat === 'General') {
-			origin = this._raw;
-		} else {
-			origin = this._val;
-			if (this.type === 'n') {
-				type = 's';
-			}
-		}
-
+	static parseType (type: string): CellType {
+		var result: CellType;
 		switch (type) {
 			case 'c':
 			case 'color':
 			case 'colour': {
+				result = CellType.COLOR;
+				break;
+			}
+			case 'd':
+			case 'date':
+			case 't':
+			case 'time': {
+				result = CellType.DATE;
+				break;
+			}
+			case 'a':
+			case 'arr':
+			case 'ary':
+			case 'array': {
+				result = CellType.ARRAY;
+				break;
+			}
+			case 'b':
+			case 'bool':
+			case 'boolean': {
+				result = CellType.BOOLEAN;
+				break;
+			}
+			case 'i':
+			case 'int':
+			case 'integer': {
+				result = CellType.INTEGER;
+				break;
+			}
+			case 'u':
+			case 'uint': {
+				result = CellType.UNSIGNED_INTEGER;
+				break;
+			}
+			case 'f':
+			case 'float':
+			case 'n':
+			case 'num':
+			case 'number': {
+				result = CellType.NUMBER;
+				break;
+			}
+			case 's':
+			case 'str':
+			case 'string': {
+				result = CellType.STRING;
+				break;
+			}
+			case 'e': {
+				result = CellType.ERROR;
+				break;
+			}
+			default: {
+				result = CellType.UNKNOWN;
+			}
+		}
+		return result;
+	}
+
+	constructor (xlsxCell: xlsx.XLSXCell, id: string) {
+		super(xlsxCell, id);
+		this.type = TypeCell.parseType(this.value);
+	}
+}
+
+class ValueCell extends Cell {
+
+	static XLSX_DATE_OFFSET = 25568;
+
+	public value: any;
+	public type: CellType;
+	public numberFormat: string;
+	public color: number = 0x000000;
+	public bgColor: number = -1;
+
+	constructor (xlsxCell: xlsx.XLSXCell, id: string, type: CellType) {
+		
+		super(xlsxCell, id);
+
+		var xlsxCellType: CellType = TypeCell.parseType(xlsxCell.t);
+		this.numberFormat = xlsxCell.z;
+
+		if (type === CellType.UNKNOWN) {
+			if (this.numberFormat !== 'General') {
+				this.type = CellType.STRING; 
+			} else {
+				this.type = xlsxCellType;
+			}
+		} else {
+			this.type = type;
+		}
+		
+		var origin: any;
+		if (this.type === CellType.STRING || this.type === CellType.ARRAY) {
+			origin = this._val;
+		} else {
+			origin = this._raw;
+		}
+		
+		this._convert(origin);
+		
+	}
+	
+	private _convert (origin: any): void {
+
+		var value: any;
+
+		switch (this.type) {
+			case CellType.COLOR: {
 				let numericValue = parseFloat(origin);
 				if (!isNaN(numericValue)) {
 					value = numericValue > 0 ? numericValue >= 0xFFFFFF ? 0xFFFFFF : Math.floor(numericValue) : 0;
@@ -297,19 +406,17 @@ class Cell {
 				}
 				break;
 			}
-			case 'd':
-			case 'date':
-			case 't':
-			case 'time': {
-				value = new Date(((+origin - 25569) * 86400 * 1000) || 0);
+			case CellType.DATE: {
+				let timezone: number = new Date().getTimezoneOffset();
+				let days: number = (+origin || 0) - ValueCell.XLSX_DATE_OFFSET;
+				let timestamp: number = (days * 24 * 60 + timezone) * 60 * 1000;
+				value = new Date(timestamp);
 				break;
 			}
-			case 'a':
-			case 'arr':
-			case 'ary':
-			case 'array': {
+			case CellType.ARRAY: {
 				if (origin === undefined) {
-					return [];
+					value = [];
+					break;
 				}
 				let values: string[] = `${origin}`.split(',');
 				value = values.map<string>( (item: string, i: number): string => {
@@ -317,55 +424,41 @@ class Cell {
 				});
 				break;
 			}
-			case 'b':
-			case 'bool':
-			case 'boolean': {
+			case CellType.BOOLEAN: {
 				value = !!origin;
 				break;
 			}
-			case 'i':
-			case 'int': {
+			case CellType.INTEGER: {
 				let numeric: number = +origin;
 				let interger: number = Math.floor(numeric);
 				value = interger || 0;
 				break;
 			}
-			case 'u':
-			case 'uint': {
+			case CellType.UNSIGNED_INTEGER: {
 				let numeric: number = +origin;
 				let interger: number = Math.floor(numeric);
 				value = interger > 0 ? interger : 0;
 				break;
 			}
-			case 'f':
-			case 'float':
-			case 'n':
-			case 'num':
-			case 'number': {
+			case CellType.NUMBER: {
 				value = +origin;
 				break;
 			}
-			case 's':
-			case 'str':
-			case 'string': {
+			case CellType.STRING: {
 				value = origin !== undefined ? `${origin}` : '';
 				break;
 			}
-			case 'e': {
+			case CellType.ERROR: {
 				console.warn('Error cell');
 				value = null;
 				break;
 			}
-			case 'stub': {
-				value = '';
-				break;
-			}
 			default: {
-				value = origin;
+				value = origin !== undefined ? origin : '';
 			}
 		}
 		
-		return value;
+		this.value = value;
 	}
 	
 	public toString (): string {
@@ -374,19 +467,16 @@ class Cell {
 	
 	public valueOf (): any {
 		switch (this.type) {
-			case 'string': {
+			case CellType.STRING: {
 				return `${this.value}`;
 			}
-			case 'number': {
+			case CellType.NUMBER: {
 				return parseFloat(this.value);
 			}
-			case 'number': {
-				return parseFloat(this.value);
-			}
-			case 'boolean': {
+			case CellType.BOOLEAN: {
 				return !!this.value;
 			}
-			case 'Date': {
+			case CellType.DATE: {
 				return new Date(parseFloat(this.value));
 			}
 		}
